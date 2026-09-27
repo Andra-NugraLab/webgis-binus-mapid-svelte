@@ -1,6 +1,8 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import maplibregl from 'maplibre-gl';
+  import * as maplibregl from 'maplibre-gl';
+  import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+  maplibregl.setWorkerUrl(workerUrl);
   import {
     basemaps,
     MVT_TILES,
@@ -38,13 +40,31 @@
     const props = event.features?.[0]?.properties;
     if (!props) return;
     const area = props.plotareaha ?? '—';
+    const country = props.countryname ?? '—';
+    const region = props.regionlabel ?? '—';
     popup
       .setLngLat(event.lngLat)
       .setHTML(
-        `<strong>${escapeHtml(props.entityname)}</strong><br>` +
-          `FID ${escapeHtml(props.FID)}<br>` +
-          `Plot ${escapeHtml(area)} ha<br>` +
-          `${escapeHtml(props.regionlabel)}`
+        `<div class="gm-popup">` +
+          `<div class="gm-popup-header">` +
+            `<span class="gm-popup-badge">Supplier</span>` +
+            `<div class="gm-popup-title">${escapeHtml(props.entityname)}</div>` +
+          `</div>` +
+          `<div class="gm-popup-body">` +
+            `<div class="gm-popup-row">` +
+              `<span class="gm-popup-label">Plot Size</span>` +
+              `<span class="gm-popup-value">${escapeHtml(area)} ha</span>` +
+            `</div>` +
+            `<div class="gm-popup-row">` +
+              `<span class="gm-popup-label">Country</span>` +
+              `<span class="gm-popup-value">${escapeHtml(country)}</span>` +
+            `</div>` +
+            `<div class="gm-popup-row">` +
+              `<span class="gm-popup-label">Region</span>` +
+              `<span class="gm-popup-value">${escapeHtml(region)}</span>` +
+            `</div>` +
+          `</div>` +
+        `</div>`
       )
       .addTo(map);
   }
@@ -98,6 +118,12 @@
   export function useMvt() {
     layerMode = 'mvt';
     applyLayer();
+  }
+
+  export function hideMvt() {
+    layerMode = 'none';
+    clearSupplierLayer();
+    popup?.remove();
   }
 
   onMount(() => {
